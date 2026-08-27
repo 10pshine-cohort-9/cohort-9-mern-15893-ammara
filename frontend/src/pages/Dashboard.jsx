@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useColorCycle } from '../hooks/useColorCycle'
 import FilterChip from '../components/FilterChip'
 import SectionLabel from '../components/SectionLabel'
 import NoteGrid from '../components/NoteGrid'
 import EmptyState from '../components/EmptyState'
+import { extractPlainText } from '../utils/html' 
 import '../styles/dashboard.css'
 
 export default function Dashboard({
@@ -15,10 +16,18 @@ export default function Dashboard({
   const [view, setView] = useState('grid')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
-  const filtered = notes
+  const searchableNotes = useMemo(
+    () => notes.map(n => ({
+      ...n,
+      _plainContent: extractPlainText(n.content).toLowerCase(),
+    })),
+    [notes]
+  )
+
+  const filtered = searchableNotes
     .filter(n => {
       const q = search.toLowerCase()
-      if (q && !n.title.toLowerCase().includes(q) && !n.content.replace(/<[^>]*>/g, '').toLowerCase().includes(q)) return false
+      if (q && !n.title.toLowerCase().includes(q) && !n._plainContent.includes(q)) return false
       if (activeTag && !n.tags.includes(activeTag)) return false
       return true
     })
@@ -45,6 +54,7 @@ export default function Dashboard({
         <div className="dashboard-header-right">
           <DashNewButton onClick={onNewNote} />
           <button
+            type="button"
             onClick={() => onNavigate('profile')}
             className="dashboard-avatar-btn"
             aria-label="View profile"
@@ -87,6 +97,7 @@ export default function Dashboard({
           </select>
           {['grid', 'list'].map(v => (
             <button
+              type="button"
               key={v}
               onClick={() => setView(v)}
               className={`dashboard-view-btn ${view === v ? 'active' : ''}`}
@@ -146,6 +157,7 @@ function DashNewButton({ onClick }) {
   const { bg, start, stop } = useColorCycle('#FF6B00')
   return (
     <button
+      type="button"
       onClick={onClick}
       onMouseEnter={start}
       onMouseLeave={stop}

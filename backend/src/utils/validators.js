@@ -1,4 +1,4 @@
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[^\s@.]+(?:\.[^\s@.]+)*@[^\s@.]+(?:\.[^\s@.]+)+$/;
 const { NOTE_COLORS } = require('../models/note.model');
 
 function isNonEmptyString(v) {
@@ -27,38 +27,68 @@ function validateLogin(body = {}) {
   return errors;
 }
 
+
+function validateTitle(title) {
+  if (typeof title !== 'string') {
+    return 'Title must be a string.';
+  }
+  if (title.trim().length > 200) {
+    return 'Title must be 200 characters or fewer.';
+  }
+  return null;
+}
+
+function validateContent(content) {
+  if (typeof content !== 'string') {
+    return 'Content must be a string.';
+  }
+  return null;
+}
+
+function validateColor(color) {
+  if (!NOTE_COLORS.includes(color)) {
+    return `Color must be one of: ${NOTE_COLORS.join(', ')}.`;
+  }
+  return null;
+}
+
+function validateTags(tags) {
+  if (!Array.isArray(tags) || !tags.every(t => typeof t === 'string')) {
+    return 'Tags must be an array of strings.';
+  }
+  return null;
+}
+
+function validatePinned(pinned) {
+  if (typeof pinned !== 'boolean') {
+    return 'Pinned must be a boolean.';
+  }
+  return null;
+}
+
+function validateWordCount(wordCount) {
+  if (typeof wordCount !== 'number' || wordCount < 0) {
+    return 'Word count must be a non-negative number.';
+  }
+  return null;
+}
+
 function validateNote(body = {}, { partial = false } = {}) {
-  const errors = [];
   const { title, content, color, tags, pinned, wordCount } = body;
 
-  if (!partial || title !== undefined) {
-    if (title !== undefined && typeof title !== 'string') errors.push('Title must be a string.');
-    else if (title && title.trim().length > 200) errors.push('Title must be 200 characters or fewer.');
-  }
+  const checks = [
+    { shouldRun: !partial || title !== undefined, value: title, validate: validateTitle },
+    { shouldRun: !partial || content !== undefined, value: content, validate: validateContent },
+    { shouldRun: color !== undefined, value: color, validate: validateColor },
+    { shouldRun: tags !== undefined, value: tags, validate: validateTags },
+    { shouldRun: pinned !== undefined, value: pinned, validate: validatePinned },
+    { shouldRun: wordCount !== undefined, value: wordCount, validate: validateWordCount },
+  ];
 
-  if (!partial || content !== undefined) {
-    if (content !== undefined && typeof content !== 'string') errors.push('Content must be a string.');
-  }
-
-  if (color !== undefined && !NOTE_COLORS.includes(color)) {
-    errors.push(`Color must be one of: ${NOTE_COLORS.join(', ')}.`);
-  }
-
-  if (tags !== undefined) {
-    if (!Array.isArray(tags) || !tags.every((t) => typeof t === 'string')) {
-      errors.push('Tags must be an array of strings.');
-    }
-  }
-
-  if (pinned !== undefined && typeof pinned !== 'boolean') {
-    errors.push('Pinned must be a boolean.');
-  }
-
-  if (wordCount !== undefined && (typeof wordCount !== 'number' || wordCount < 0)) {
-    errors.push('Word count must be a non-negative number.');
-  }
-
-  return errors;
+  return checks
+    .filter(c => c.shouldRun)
+    .map(c => c.validate(c.value))
+    .filter(Boolean);
 }
 
 module.exports = { validateSignup, validateLogin, validateNote, isNonEmptyString };

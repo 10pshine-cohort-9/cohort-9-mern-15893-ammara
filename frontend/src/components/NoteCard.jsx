@@ -1,3 +1,5 @@
+import { extractPlainText } from '../utils/html'   
+
 const COLOR_MAP = {
   '#FF6B00': '#FFDDD0',
   '#FFB830': '#FFEEC2',
@@ -9,27 +11,17 @@ const COLOR_MAP = {
 
 export default function NoteCard({ note, view, onEdit, onDelete, isConfirmingDelete, onCancelDelete, onConfirmDelete }) {
   const bgColor = COLOR_MAP[note.color] || '#f5f5f5'
-  const plainText = note.content
-  .replace(/<[^>]*>/g, '')
-  .replace(/&nbsp;/g, ' ')
-  .replace(/&amp;/g, '&')
-  .replace(/&lt;/g, '<')
-  .replace(/&gt;/g, '>')
-  .replace(/&quot;/g, '"')
-  .replace(/&#39;/g, "'")
+
+  const plainText = extractPlainText(note.content)
   const preview = plainText.length > 140 ? plainText.slice(0, 140) + '…' : plainText
 
-  // Handle card click - only trigger edit if clicking on card, not on buttons
   const handleCardClick = (e) => {
-    // Check if the click target is a button or inside a button
     if (!e.target.closest('button')) {
       onEdit()
     }
   }
 
-  // Handle keyboard events on card
   const handleCardKeyDown = (e) => {
-    // Only trigger edit if Enter/Space is pressed on the card itself, not on buttons
     if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('button')) {
       e.preventDefault()
       onEdit()
@@ -144,6 +136,7 @@ export default function NoteCard({ note, view, onEdit, onDelete, isConfirmingDel
         {isConfirmingDelete ? (
           <div style={{ display: 'flex', gap: 6 }}>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation()
                 onConfirmDelete()
@@ -164,6 +157,7 @@ export default function NoteCard({ note, view, onEdit, onDelete, isConfirmingDel
               Confirm
             </button>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation()
                 onCancelDelete()
@@ -187,6 +181,7 @@ export default function NoteCard({ note, view, onEdit, onDelete, isConfirmingDel
         ) : (
           <div style={{ display: 'flex', gap: 4 }}>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation()
                 onEdit()
@@ -205,6 +200,7 @@ export default function NoteCard({ note, view, onEdit, onDelete, isConfirmingDel
               ✏️
             </button>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation()
                 onDelete()
